@@ -1,6 +1,5 @@
-﻿IMPORT * FROM ML;
-IMPORT * FROM TestingSuite.Classification.Datasets;
-IMPORT * FROM TestingSuite.Utils;
+﻿IMPORT ML;
+IMPORT discrete_houseVoteDS FROM TestingSuite.Classification.Datasets;
 IMPORT ML.GradientBoosting as GB;
 IMPORT ML.Types;
 

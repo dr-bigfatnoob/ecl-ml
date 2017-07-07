@@ -13,7 +13,7 @@ EXPORT ID3(Types.t_Count min_NumObj=2, Types.t_level max_Level=32) := MODULE(ML.
     node_dep := TABLE(attrib1, {node_id, tot := COUNT(GROUP), depend_sum := SUM(GROUP, depend),
                       depend_sum_sq:=SUM(GROUP, depend*depend), std_dev := SQRT(VARIANCE(GROUP, depend)),
                       mean:= AVE(GROUP, depend), minSplit:=minNumObj},
-                node_id, FEW);
+                node_id, UNSORTED);
     root_noSplit := node_dep(tot < (2 * minNumObj));
     root_noSplit_node := DEDUP(SORT(JOIN(root_noSplit, node_dep, LEFT.node_id=RIGHT.node_id,
                          TRANSFORM(RIGHT), MANY LOOKUP), node_id, -tot), node_id);

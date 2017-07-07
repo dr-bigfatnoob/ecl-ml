@@ -1,4 +1,4 @@
-﻿IMPORT * FROM ML;
+﻿IMPORT ML;
 IMPORT ML.Types as Types;
 
 EXPORT GBTypes := MODULE

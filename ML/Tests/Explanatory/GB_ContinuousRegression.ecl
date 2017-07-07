@@ -1,6 +1,5 @@
-﻿IMPORT * FROM ML;
-IMPORT * FROM TestingSuite.Regression.Datasets;
-IMPORT * FROM TestingSuite.Utils;
+﻿IMPORT ML;
+IMPORT housingDS FROM TestingSuite.Regression.Datasets;
 IMPORT ML.GradientBoosting as GB;
 IMPORT ML.Types;
 

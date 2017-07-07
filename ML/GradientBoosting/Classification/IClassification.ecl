@@ -1,4 +1,4 @@
-﻿IMPORT * FROM ML;
+﻿IMPORT ML;
 IMPORT ML.Types as Types;
 IMPORT ML.GradientBoosting.Losses as Losses;
 IMPORT ML.GradientBoosting.GBTypes as GBTypes;
@@ -88,7 +88,7 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
       new_actuals := PROJECT(errors, TRANSFORM(GBRecord, SELF.id:=LEFT.id, SELF.iteration:=c+1,
                                                 SELF.isBeta:=FALSE, SELF.number:=depIndex,
                                                 SELF.value:=LEFT.loss, SELF.classifier_ID:=c_id));
-      RETURN recs + new_betas + new_actuals;
+      RETURN recs(isBeta=TRUE) + new_betas + new_actuals;
     END;
     looped := LOOP(records, repeats, loopBody(ROWS(LEFT), COUNTER));
     RETURN looped(isBeta=TRUE);

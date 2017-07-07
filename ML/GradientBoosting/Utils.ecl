@@ -1,4 +1,4 @@
-﻿IMPORT * FROM ML;
+﻿IMPORT ML;
 IMPORT ML.GradientBoosting.Losses as Losses;
 IMPORT ML.Types as Types;
 
