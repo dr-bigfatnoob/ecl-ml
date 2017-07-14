@@ -50,4 +50,24 @@ EXPORT ITree(Types.t_Count min_NumObj=2, Types.t_level max_Level=32) := MODULE, 
     RETURN nodes;
   END;
 
+  // Categorical and Continuous Variables
+  SHARED SplitCD := ML.DecisionTree.Utils.SplitCD;
+  SHARED TreeNodeCD := ML.DecisionTree.Utils.MixedTreeNode;
+  SHARED FieldType := ML.DecisionTree.Utils.FieldType;
+
+  SHARED VIRTUAL SplitCD BinarySplitCD(DATASET(Types.NumericField) indep, DATASET(Types.NumericField) dep, DATASET(FieldType) f_types) := FUNCTION
+    RETURN DATASET([], SplitCD);
+  END;
+
+  EXPORT LearnCD(DATASET(Types.NumericField) indep, DATASET(Types.NumericField) dep, DATASET(FieldType) f_types) := FUNCTION
+    nodes := BinarySplitCD(indep, dep, f_types);
+    RETURN ML.DecisionTree.Utils.ToMixedTree(nodes);
+  END;
+
+  // Convert a model from numeric to table of SplitCD Records.
+  EXPORT getModelCD(DATASET(Types.NumericField) mod) := FUNCTION
+    ML.FromField(mod, SplitCD, nodes,ML.DecisionTree.Utils.SplitCD_Map);
+    RETURN nodes;
+  END;
+
 END;

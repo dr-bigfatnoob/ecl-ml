@@ -22,7 +22,7 @@ EXPORT IRegression(DATASET(NumericField) X, DATASET(NumericField) Y,
 
   EXPORT Extremes := TABLE(X, AggRecord, number);
 
-  SHARED DATASET(NumericField) NormalizeX(DATASET(NumericField) indeps) := FUNCTION
+  SHARED VIRTUAL DATASET(NumericField) NormalizeX(DATASET(NumericField) indeps) := FUNCTION
     RETURN IF(doNormalize, JOIN(indeps, Extremes, LEFT.number=RIGHT.number, TRANSFORM(NumericField,
                            SELF.id:=LEFT.id, SELF.number:=LEFT.number, SELF.value:=GBUtils.Norm(LEFT.value,
                                     RIGHT.max_val, RIGHT.min_val))),
