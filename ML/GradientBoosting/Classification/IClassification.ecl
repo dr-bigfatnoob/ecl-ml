@@ -45,7 +45,7 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
   END;
 
   // Metadata for classes.
-  EXPORT DATASET(ValueRecord) Classes := PROJECT(DEDUP(Y, value),
+  EXPORT DATASET(ValueRecord) Classes := PROJECT(DEDUP(SORT(TABLE(Y, {value}), value),value),
                                          TRANSFORM(ValueRecord, SELF.value:=LEFT.value, SELF.id:=COUNTER));
 
   // Generate depenedent variables
