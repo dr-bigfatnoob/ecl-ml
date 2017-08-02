@@ -6,6 +6,8 @@ IMPORT ML.GradientBoosting.GBTypes as GBTypes;
 NumericField := Types.NumericField;
 FieldType := ML.DecisionTree.Utils.FieldType;
 GBUtils := ML.GradientBoosting.Utils;
+DependentRecord := GBTypes.DependentClassifierRecord;
+ValueRecord := GBTypes.ValueRecord;
 
 EXPORT MixedTree(DATASET(NumericField) X, DATASET(NumericField) Y,
                  DATASET(FieldType) f_types,
@@ -17,11 +19,14 @@ EXPORT MixedTree(DATASET(NumericField) X, DATASET(NumericField) Y,
 
   SHARED Type_Extremes := JOIN(Extremes, f_types, LEFT.number=RIGHT.number);
 
-  SHARED DATASET(NumericField) NormalizeX(DATASET(NumericField) indeps) := FUNCTION
-    RETURN IF(doNormalize, JOIN(indeps, Type_Extremes, LEFT.number=RIGHT.number, TRANSFORM(NumericField,
+  SHARED DATASET(DependentRecord) NormalizeX(DATASET(NumericField) indeps, DATASET(ValueRecord) classifiers) := FUNCTION
+    normalized := IF(doNormalize, JOIN(indeps, Type_Extremes, LEFT.number=RIGHT.number, TRANSFORM(NumericField,
                            SELF.id:=LEFT.id, SELF.number:=LEFT.number,
                            SELF.value:=IF(RIGHT.is_continuous, GBUtils.Norm(LEFT.value,RIGHT.max_val, RIGHT.min_val), LEFT.value))),
               indeps);
+    RETURN DISTRIBUTE(JOIN(normalized, classifiers, TRUE,
+                      TRANSFORM(DependentRecord, SELF.classifier_ID:=RIGHT.id, SELF:=LEFT), ALL),
+                      HASH(classifier_ID));
   END;
 
   SHARED baseTree := ML.DecisionTree.Regression.ID3(min_NumObj, max_Level);

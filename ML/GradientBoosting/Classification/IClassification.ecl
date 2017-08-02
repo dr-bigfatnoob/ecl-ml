@@ -22,11 +22,14 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
 
   EXPORT Extremes := TABLE(X, AggRecord, number);
 
-  SHARED VIRTUAL DATASET(NumericField) NormalizeX(DATASET(NumericField) indeps) := FUNCTION
-    RETURN IF(doNormalize, JOIN(indeps, Extremes, LEFT.number=RIGHT.number, TRANSFORM(NumericField,
+  SHARED VIRTUAL DATASET(DependentRecord) NormalizeX(DATASET(NumericField) indeps, DATASET(ValueRecord) classifiers) := FUNCTION
+    normalized := IF(doNormalize, JOIN(indeps, Extremes, LEFT.number=RIGHT.number, TRANSFORM(NumericField,
                            SELF.id:=LEFT.id, SELF.number:=LEFT.number, SELF.value:=GBUtils.Norm(LEFT.value,
                                     RIGHT.max_val, RIGHT.min_val))),
               indeps);
+    RETURN DISTRIBUTE(JOIN(normalized, classifiers, TRUE,
+                      TRANSFORM(DependentRecord, SELF.classifier_ID:=RIGHT.id, SELF:=LEFT), ALL),
+                      HASH(classifier_ID));
   END;
 
   SHARED ComputeErrors := GBUtils.ComputeErrors;
@@ -64,7 +67,7 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
   END;
 
   // Independent Variables
-  SHARED DATASET(NumericField) Independents := NormalizeX(X);
+  EXPORT DATASET(DependentRecord) Independents := NormalizeX(X, Classes);
   // Dependent Variables
   EXPORT DATASET(DependentRecord) Dependents := getDependents();
   // Number of Iterations
@@ -75,13 +78,13 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
     records := PROJECT(Dependents(classifier_ID=c_id),
                       TRANSFORM(GBRecord, SELF.id:=LEFT.id, SELF.iteration:=1, SELF.isBeta:=FALSE,
                       SELF.number:=LEFT.number, SELF.value:=LEFT.value, SELF.classifier_ID:=LEFT.classifier_ID));
-
-    depIndex := MAX(Independents, number) + 1;
+    classifier_indeps := PROJECT(Independents(classifier_ID=c_id), TRANSFORM(NumericField, SELF:=LEFT));
+    depIndex := MAX(classifier_indeps, number) + 1;
     GBRecord loopBody(DATASET(GBRecord) recs, INTEGER c) := FUNCTION
       actuals := PROJECT(recs(isBeta=FALSE, iteration=c),
                           TRANSFORM(NumericField, SELF.id:=LEFT.id, SELF.number:=LEFT.number, SELF.value:=LEFT.value));
-      computed_betas := ComputeBetas(Independents, actuals);
-      errors := ComputeLocalErrors(Independents, actuals, computed_betas);
+      computed_betas := ComputeBetas(classifier_indeps, actuals);
+      errors := ComputeLocalErrors(classifier_indeps, actuals, computed_betas);
       new_betas := PROJECT(computed_betas, TRANSFORM(GBRecord, SELF.id:=LEFT.id, SELF.iteration:=c,
                                                     SELF.isBeta:=TRUE, SELF.number:=LEFT.number,
                                                     SELF.value:=LEFT.value, SELF.classifier_ID:=c_id));
@@ -97,9 +100,9 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
   // Perform Gradient Boosting Classification
   // Returns weights for each local regressor for each iteration.
   EXPORT DATASET(GBRecord) Learn() := FUNCTION
-    GBRecord loopBody(DATASET(GBRecord) recs, Types.t_FieldNumber c_id) := FUNCTION
-      new_recs := LearnClassifier(c_id);
-      RETURN recs + new_recs;
+    GBRecord loopBody(DATASET(GBRecord) rs, Types.t_FieldNumber c_id) := FUNCTION
+      new_rs := LearnClassifier(c_id);
+      RETURN rs + new_rs;
     END;
     looped := LOOP(DATASET([], GBRecord), COUNT(Classes), loopBody(ROWS(LEFT), COUNTER));
     RETURN looped;
@@ -131,9 +134,9 @@ EXPORT IClassification (DATASET(NumericField) X, DATASET(NumericField) Y,
   END;
 
   EXPORT DATASET(LabeledNumericField) Predict(DATASET(NumericField) indeps, DATASET(GBRecord) weights) := FUNCTION
-    norm_indeps := NormalizeX(indeps);
+    norm_indeps := NormalizeX(indeps, Classes);
     LabeledNumericField loopBody(DATASET(LabeledNumericField) recs, Types.t_FieldNumber c_id) := FUNCTION
-      new_recs := PredictClassifier(norm_indeps, weights, c_id);
+      new_recs := PredictClassifier(PROJECT(norm_indeps(classifier_ID=c_id), TRANSFORM(NumericField, SELF:=LEFT)), weights, c_id);
       RETURN recs + new_recs;
     END;
     looped := SORT(

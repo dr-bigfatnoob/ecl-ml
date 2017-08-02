@@ -1,5 +1,5 @@
 ﻿IMPORT ML;
-IMPORT discrete_houseVoteDS FROM TestingSuite.Classification.Datasets;
+IMPORT discrete_VehicleDS FROM TestingSuite.Classification.Datasets;
 IMPORT ML.GradientBoosting as GB;
 IMPORT ML.Types as Types;
 
@@ -11,7 +11,7 @@ Tree := GB.Classification.CategoricalTree;
 LabeledNumericField := GB.GBTypes.LabeledNumericField;
 
 // Datasets
-content := discrete_houseVoteDS.content;
+content := discrete_VehicleDS.content;
 
 // Independent and Dependent Variables
 ML.ToField(content, fielded);
